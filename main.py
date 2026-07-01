@@ -39,6 +39,10 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 
 @app.post("/register")
 def register(name: str, email: str, password: str, gender: str, db: Session = Depends(get_db)):
+    existing_user = db.query(User).filter(User.email == email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered. Please login instead.")
+
     # looking_for default "any" rakha hai, user baad mein change kar sakta hai
     new_user = User(
         name=name, email=email, hashed_password=hash_password(password),
@@ -48,7 +52,6 @@ def register(name: str, email: str, password: str, gender: str, db: Session = De
     db.commit()
     db.refresh(new_user)
     return {"message": "User created", "user_id": new_user.id}
-
 
 @app.post("/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
